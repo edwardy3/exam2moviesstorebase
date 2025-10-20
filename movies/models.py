@@ -20,3 +20,19 @@ class Review(models.Model):
         on_delete=models.CASCADE)
     def __str__(self):
         return str(self.id) + ' - ' + self.movie.name
+
+class Rating(models.Model):
+    id = models.AutoField(primary_key=True)
+    value = models.IntegerField()
+    movie = models.ForeignKey(Movie,
+        on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User,
+        on_delete=models.CASCADE, related_name='movie_ratings')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['movie', 'user'], name='unique_movie_user_rating')
+        ]
+
+    def __str__(self):
+        return f"{self.movie.name} - {self.user.username}: {self.value}"

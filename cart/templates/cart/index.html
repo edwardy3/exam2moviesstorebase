@@ -36,9 +36,12 @@
       <div class="text-end">
         <a class="btn btn-outline-secondary mb-2"><b>Total to pay:</b> ${{ template_data.cart_total }}</a>
         {% if template_data.movies_in_cart|length > 0 %}
-        <a href="{% url 'cart.purchase' %}"
-          class="btn bg-dark text-white mb-2">Purchase
-        </a>
+        <form id="purchaseForm" method="POST" action="{% url 'cart.purchase' %}" style="display:inline-block;">
+          {% csrf_token %}
+          <input type="hidden" name="latitude" id="latitudeInput">
+          <input type="hidden" name="longitude" id="longitudeInput">
+          <button type="submit" id="purchaseBtn" class="btn bg-dark text-white mb-2">Purchase</button>
+        </form>
         <a href="{% url 'cart.clear' %}">
           <button class="btn btn-danger mb-2">
             Remove all movies from Cart
@@ -49,4 +52,88 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function() {
+    const form = document.getElementById('purchaseForm');
+    const purchaseBtn = document.getElementById('purchaseBtn');
+    if (!form) return;
+    // Prefill from localStorage if present
+    try {
+      const latInput = document.getElementById('latitudeInput');
+      const lngInput = document.getElementById('longitudeInput');
+      const slat = localStorage.getItem('purchase_lat');
+      const slng = localStorage.getItem('purchase_lng');
+      if (slat && slng) {
+        latInput.value = slat;
+        lngInput.value = slng;
+      }
+    } catch (_) {}
+    form.addEventListener('submit', function(e) {
+      // Attempt to attach geolocation; if JS disabled, this never runs and the form submits normally.
+      e.preventDefault();
+      const latInput = document.getElementById('latitudeInput');
+      const lngInput = document.getElementById('longitudeInput');
+
+      const setBusy = (busy) => {
+        if (!purchaseBtn) return;
+        if (busy) {
+          purchaseBtn.disabled = true;
+          purchaseBtn.dataset._text = purchaseBtn.textContent;
+          purchaseBtn.textContent = 'Requesting location…';
+        } else {
+          purchaseBtn.disabled = false;
+          if (purchaseBtn.dataset._text) purchaseBtn.textContent = purchaseBtn.dataset._text;
+        }
+      };
+
+      if (!navigator.geolocation) {
+        form.submit();
+        return;
+      }
+
+      // Trigger browser permission prompt; wait for explicit success/error
+      setBusy(true);
+
+      const requestPosition = () => {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          latInput.value = pos.coords.latitude;
+          lngInput.value = pos.coords.longitude;
+          setBusy(false);
+          form.submit();
+        }, function(err) {
+          // User denied or error; proceed without location
+          setBusy(false);
+          if (err && err.code === 1) {
+            // PERMISSION_DENIED
+            alert('Location access was denied. You can proceed without location or enable it in your browser settings.');
+          }
+          form.submit();
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+      };
+
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+            if (result.state === 'denied') {
+              // Inform user and proceed
+              setBusy(false);
+              alert('Location permission is blocked for this site. Please enable it in your browser settings to include your purchase location.');
+              form.submit();
+            } else {
+              // 'granted' or 'prompt' → request will show prompt if needed
+              requestPosition();
+            }
+          }).catch(function() { requestPosition(); });
+        } catch (_) {
+          requestPosition();
+        }
+      } else {
+        requestPosition();
+      }
+    });
+
+    // Removed manual prefetch button; location will be requested automatically on purchase
+  })();
+</script>
 {% endblock content %}

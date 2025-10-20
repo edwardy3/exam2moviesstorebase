@@ -10,7 +10,7 @@
         <p><b>Description:</b> {{ template_data.movie.description }}</p>
         <p><b>Price:</b> ${{ template_data.movie.price }}</p>
         <p class="card-text">
-          <form method="post" action="{% url 'cart.add' id=template_data.movie.id %}">
+          <form id="addToCartForm" method="post" action="{% url 'cart.add' id=template_data.movie.id %}">
             <div class="row">
               {% csrf_token %}
               <div class="col-auto">
@@ -28,6 +28,27 @@
 
         <h2>Reviews</h2>
         <hr />
+        <div class="mt-3">
+          <h5>Average rating: {% if template_data.avg_rating %}{{ template_data.avg_rating }} / 5{% else %}No ratings yet{% endif %}</h5>
+          {% if user.is_authenticated %}
+          <form method="POST" action="{% url 'movies.rate' id=template_data.movie.id %}">
+            {% csrf_token %}
+            <div class="input-group" style="max-width: 260px;">
+              <label class="input-group-text" for="rating">Your rating</label>
+              <select id="rating" name="rating" class="form-select" required>
+                <option value="" disabled {% if not template_data.user_rating %}selected{% endif %}>Select</option>
+                {% for i in "12345" %}
+                <option value="{{ i }}" {% if template_data.user_rating == i|add:0 %}selected{% endif %}>{{ i }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn bg-dark text-white" type="submit">Save</button>
+            </div>
+          </form>
+          {% else %}
+          <p class="text-muted">Log in to rate this movie.</p>
+          {% endif %}
+        </div>
+        <br>
         <ul class="list-group">
           {% for review in template_data.reviews %}
           <li class="list-group-item pb-3 pt-3">
@@ -82,7 +103,7 @@
       <div class="col-md-6 mx-auto mb-3 text-center">
         <img src="{{ template_data.movie.image.url }}" class="rounded img-card-400" />
       </div>
-    </div>
-  </div>
+</div>
+</div>
 </div>
 {% endblock content %}

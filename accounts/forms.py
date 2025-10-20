@@ -14,3 +14,7 @@ class CustomUserCreationForm(UserCreationForm):
             self.fields[fieldname].widget.attrs.update(
                 {'class': 'form-control'}
             )
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        return user
