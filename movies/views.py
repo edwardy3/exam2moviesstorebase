@@ -3,7 +3,7 @@ from .models import Movie, Review, Rating
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Sum, Avg
-from cart.models import Item, Order
+from cart.models import Item
 import json
 
 
