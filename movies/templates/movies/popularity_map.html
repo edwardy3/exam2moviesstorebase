@@ -133,7 +133,8 @@
       
       myLocation.marker = L.marker([lat, lng], { title: 'You are here' }).addTo(map);
       myLocation.circle = L.circle([lat, lng], { radius: 20000, color: '#0d6efd', fillOpacity: 0.1 }).addTo(map);
-      map.setView([lat, lng], Math.max(map.getZoom(), 5));
+      // Zoom in to a closer level to focus on the user's location
+      map.setView([lat, lng], 5);
     }, () => alert('Unable to retrieve your location.'), 
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   });
